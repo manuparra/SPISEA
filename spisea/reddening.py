@@ -1636,3 +1636,84 @@ class CubicSpline:
         self.x, self.y, self.y2 = (x, y, y2)
     def __call__(self, x):
         return splint(self, x)
+
+
+class RedLawHosek18b_extended(pysynphot.reddening.CustomRedLaw):
+    """
+    Defines extended extinction law that combines Hosek18b with 
+    Schlafly+16 in order to span from 0.6 microns -- 4.8 microns.
+
+    Will use Hosek+18b extinction law from 0.7 - 2.14 microns
+    Schlafly+16 from 2.14 - 4.8 and 0.7 - 0.6 microns
+
+    Lined up S16 extinction law to H18 by-eye, this 
+    is only meant as a quick analysis for JWST proposal.
+    """
+    def __init__(self):
+        # Define the two extinction laws
+        redlaw_h18b = RedLawHosek18b()
+        redlaw_s16 = RedLawSchlafly16(1.8, 0.03)
+
+        # Since they are on the same wavelength scale, I can simply combine
+        # the laws in the regions they belong
+        idx_h18b = np.where( (redlaw_h18b.wave >= (0.7*10**4)) & (redlaw_h18b.wave <= (2.14*10**4)) )
+        idx_s16_short = np.where( redlaw_s16.wave < (0.7*10**4) )
+        idx_s16_long = np.where(redlaw_s16.wave > (2.14*10**4) )
+
+        wave_combo = redlaw_s16.wave[idx_s16_short]
+        wave_combo = np.append(wave_combo, redlaw_h18b.wave[idx_h18b])
+        wave_combo = np.append(wave_combo, redlaw_s16.wave[idx_s16_long])
+
+        Alambda_scaled = redlaw_s16.obscuration[idx_s16_short]
+        Alambda_scaled = np.append(Alambda_scaled, redlaw_h18b.obscuration[idx_h18b])
+        Alambda_scaled = np.append(Alambda_scaled, redlaw_s16.obscuration[idx_s16_long])
+        
+        pysynphot.reddening.CustomRedLaw.__init__(self, wave=wave_combo, 
+                                                  waveunits='angstrom',
+                                                  Avscaled=Alambda_scaled,
+                                                  name='Hosek+18b_extended',
+                                                  litref='Hosek+18b, Shlafly+16')
+
+        # Set the upper/lower wavelength limits of law (in angstroms)
+        self.low_lim = min(wave_combo)
+        self.high_lim = max(wave_combo)
+        self.name = 'H18b_extend'
+        
+    def Hosek18b_extended(self, wavelength, AKs):
+        """ 
+        Return the extinction at a given wavelength assuming the 
+        extinction law and an overall `AKs` value.
+
+        Parameters
+        ----------
+        wavelength : float or array
+            Wavelength to return extinction for, in microns
+        AKs : float
+            Total extinction in AKs, in mags
+        """
+        # If input entry is a single float, turn it into an array
+        try:
+            len(wavelength)
+        except:
+            wavelength = [wavelength]
+
+        # Return error if any wavelength is beyond interpolation range of
+        # extinction law
+        if ((min(wavelength) < (self.low_lim*10**-4)) | (max(wavelength) > (self.high_lim*10**-4))):
+            return ValueError('{0}: wavelength values beyond interpolation range'.format(self))
+            
+        # Extract wave and A/AKs from law, turning wave into micron units
+        wave = self.wave * (10**-4)
+        law = self.obscuration
+
+        # Find the value of the law at the closest points
+        # to wavelength
+        A_AKs_at_wave = []
+        for ii in wavelength:
+            idx = np.where( abs(wave - ii) == min(abs(wave - ii)) )
+            A_AKs_at_wave.append(law[idx][0])
+
+        # Now multiply by AKs (since law assumes AKs = 1)
+        A_at_wave = np.array(A_AKs_at_wave) * AKs
+
+        return A_at_wave
