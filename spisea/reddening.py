@@ -7,6 +7,7 @@ Reddening laws.
 import pylab as py
 import numpy as np
 from scipy import interpolate
+from astropy.table import Table
 import pysynphot
 from scipy.linalg import solve_banded
 import pdb
@@ -1292,6 +1293,26 @@ class RedLawFritz11(pysynphot.reddening.CustomRedLaw):
         # Interpolate over the curve
         spline_interp = interpolate.splrep(wave, A_AKs, k=3, s=0)
         A_at_wave = interpolate.splev(wavelength, spline_interp)
+
+        # Hacky fix, but import another module of spisea so we can get the
+        # absolute path to the data file in the SPISEA repository
+        from spisea import filters
+        spisea_path = filters.__file__[:-10]
+        file_path = '{0}/../data/redlaws/fritz11.fits'.format(spisea_path)
+        fritz_file = Table.read(file_path, format='fits')
+        
+
+        pdb.set_trace()
+
+        # Test the performance of the interpolation, if desired
+        test = True
+        if test:
+            # Plot the interpolated curve to compare against
+            # Figure 8 
+            
+
+
+            pdb.set_trace()
 
         # We'll call 2.14 microns the K-band
         idx = np.where( abs(wavelength - 2.14) == min(abs(wavelength - 2.14)) )
