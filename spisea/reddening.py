@@ -1296,7 +1296,7 @@ class RedLawFritz11(pysynphot.reddening.CustomRedLaw):
 
         # Hacky fix, but import another module of spisea so we can get the
         # absolute path to the data file in the SPISEA repository.
-        # Read in the fritz extinction law file
+        # Read in the fritz extinction law file 
         from spisea import filters
         spisea_path = filters.__file__[:-10]
         file_path = '{0}/../data/redlaws/fritz11.fits'.format(spisea_path)
