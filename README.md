@@ -36,12 +36,11 @@ For reference, v2.0.0 has the same functionality as v1.0.1.
 Instructions for updating from version 1 to version 2 are provided in
 the documentation [here](https://spisea.readthedocs.io/en/latest/version_switch.html#version).
 
-## Contributions
-We encourage contributions to SPISEA, particularly those that add
-support for star formation histories, new models, higher spectral
-resolution, etc. For feature additions, we ask that users make their
-own fork of the repository, make their changes, and then submit a pull
-request to the "dev" branch.
+
+## Contributors
+
+- Manuel Parra-Royón (use here you name)
+
 
 All contributions will be acknowledged on the
 [contributors page](https://spisea.readthedocs.io/en/dev/contributors.html#contributors). Contributors
